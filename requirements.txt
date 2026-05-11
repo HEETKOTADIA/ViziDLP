@@ -1,0 +1,53 @@
+# ViziDLP - AI Powered Visual Data Loss Prevention System
+# Core Dependencies
+
+# Web Framework
+flask>=3.0.0
+
+# Computer Vision
+opencv-python>=4.8.0
+ultralytics>=8.0.0  # YOLOv8
+
+# OCR — Primary: PaddleOCR, Fallback: Tesseract
+paddleocr>=2.7.0
+paddlepaddle>=2.5.0
+pytesseract>=0.3.10
+
+# Screen Capture
+mss>=9.0.0
+
+# Keyboard Monitoring
+pynput>=1.7.6
+
+# AI Framework
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Image Processing
+Pillow>=10.0.0
+numpy>=1.24.0
+
+# Desktop Notifications
+plyer>=2.1.0
+
+# Database
+# SQLite is built-in to Python
+
+# Encryption
+cryptography>=41.0.0
+
+# Process Monitoring
+psutil>=5.9.0
+
+# Clipboard Access (Policy Engine + Clipboard Monitor)
+pyperclip>=1.8.0
+
+# Password Hashing (Dashboard Auth)
+bcrypt>=4.0.0
+
+# File-Level DLP (PDF + DOCX scanning)
+PyPDF2>=3.0.0
+python-docx>=0.8.11
+
+# USB Monitor (Windows WMI — optional)
+# wmi>=1.5.1

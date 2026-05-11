@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ViziDLP — Security Operations Dashboard</title>
+    <meta name="description"
+        content="AI-Powered Visual Data Loss Prevention — Real-time security monitoring, threat detection, and incident response dashboard.">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                </div>
+                <span class="logo-text">ViziDLP</span>
+            </div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/" class="active" id="nav-dashboard">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" />
+                        <rect x="14" y="3" width="7" height="7" />
+                        <rect x="14" y="14" width="7" height="7" />
+                        <rect x="3" y="14" width="7" height="7" />
+                    </svg>
+                    Dashboard
+                </a></li>
+            <li><a href="/logs" id="nav-logs">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    Evidence Logs
+                </a></li>
+            <li><a href="/timeline" id="nav-timeline">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    Timeline
+                </a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="monitoring-status" id="monitoring-badge">
+                <span class="status-dot"></span>
+                <span class="status-text">Initializing...</span>
+            </div>
+
+            <!-- Face Registry Info -->
+            <div class="face-info-card" id="face-info-card">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    Face Registry
+                </div>
+                <div class="info-row">Known Faces: <strong id="face-count">0</strong></div>
+                <div class="info-row">Mode: <span id="face-mode">Loading...</span></div>
+                <button class="manage-faces-btn" onclick="openFaceModal()">Manage Faces</button>
+            </div>
+
+            <!-- Cloud Alert Status -->
+            <div class="cloud-alert-card" id="cloud-alert-card">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+                    </svg>
+                    Cloud Alerts
+                </div>
+                <div class="stat-row"><span class="label">Status</span><span id="webhook-status" class="webhook-status-disabled">DISABLED</span></div>
+                <div class="stat-row"><span class="label">Dispatched</span><span id="webhook-dispatched">0</span></div>
+                <div class="stat-row"><span class="label">Endpoint</span><span id="webhook-endpoint" style="font-size:0.65rem;font-family:var(--font-mono);">—</span></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="page-title">
+                <h1>Security Operations Dashboard</h1>
+                <p class="subtitle">Real-time visual data loss prevention monitoring</p>
+            </div>
+            <div class="header-actions">
+                <div class="session-selector">
+                    <label for="session-select" class="session-label">Session</label>
+                    <select id="session-select" class="filter-select" title="Session History">
+                        <option value="">Current Session</option>
+                    </select>
+                </div>
+                <div class="risk-level-badge" id="risk-badge">
+                    <span>Risk</span>
+                    <span class="risk-value" id="risk-value">LOW</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Critical Alert Banners -->
+        <div class="critical-alert-banner" id="phone-alert-banner" style="display:none;">
+            <div class="banner-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                    <line x1="12" y1="18" x2="12.01" y2="18" />
+                </svg>
+            </div>
+            <div class="banner-content">
+                <strong>⚠ CRITICAL: Phone Camera Detected</strong>
+                <p>A phone has been detected via webcam. Possible data exfiltration attempt.</p>
+            </div>
+            <span class="banner-count" id="phone-detection-count">0</span>
+        </div>
+
+        <div class="critical-alert-banner" id="recording-alert-banner" style="display:none;">
+            <div class="banner-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <circle cx="12" cy="12" r="3" fill="currentColor" />
+                </svg>
+            </div>
+            <div class="banner-content">
+                <strong>⚠ CRITICAL: Screen Recording Detected</strong>
+                <p id="recording-app-name">Recording software is active.</p>
+            </div>
+        </div>
+
+        <div class="dashboard-content">
+            <!-- Active Monitoring Section -->
+            <div>
+                <div class="section-header">
+                    <h2>Active Monitoring</h2>
+                    <span class="accent-line"></span>
+                </div>
+                <div class="monitors-grid" id="monitors-grid">
+                    <div class="monitor-card">
+                        <span class="monitor-dot" id="mon-screen"></span>
+                        <span class="monitor-label">Screen Monitor</span>
+                    </div>
+                    <div class="monitor-card">
+                        <span class="monitor-dot" id="mon-webcam"></span>
+                        <span class="monitor-label">Webcam Capture</span>
+                    </div>
+                    <div class="monitor-card">
+                        <span class="monitor-dot" id="mon-screenshot"></span>
+                        <span class="monitor-label">Screenshot Detection</span>
+                    </div>
+                    <div class="monitor-card">
+                        <span class="monitor-dot" id="mon-phone"></span>
+                        <span class="monitor-label">Phone Detection</span>
+                    </div>
+                    <div class="monitor-card">
+                        <span class="monitor-dot" id="mon-recording"></span>
+                        <span class="monitor-label">Recording Detection</span>
+                    </div>
+                    <div class="monitor-card">
+                        <span class="monitor-dot active"></span>
+                        <span class="monitor-label">Privacy Pipeline</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card stat-total">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path
+                                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="total-incidents">0</span>
+                        <span class="stat-label">Total Incidents</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-high">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="high-critical-count">0</span>
+                        <span class="stat-label">High / Critical</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-sessions">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                            <line x1="8" y1="21" x2="16" y2="21" />
+                            <line x1="12" y1="17" x2="12" y2="21" />
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="total-sessions">0</span>
+                        <span class="stat-label">Sessions</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-alerts">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="alert-count">0</span>
+                        <span class="stat-label">Active Alerts</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-phone">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                            <line x1="12" y1="18" x2="12.01" y2="18" />
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="phone-count">0</span>
+                        <span class="stat-label">Phone Detections</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="charts-grid">
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h3>Threat Severity Distribution</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="severity-chart"></canvas>
+                    </div>
+                </div>
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <h3>Detection Types</h3>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="types-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Three Col: Feed, Heatmap, Alerts -->
+            <div class="three-col-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Live Detection Feed</h3>
+                        <a href="/logs" class="view-all-link">View All →</a>
+                    </div>
+                    <div class="card-body live-feed-container" id="live-feed-container">
+                        <div class="empty-state">
+                            <p>Waiting for detections...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Hourly Activity Heatmap</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="heatmap-grid" id="heatmap-grid"></div>
+                        <div class="heatmap-labels" id="heatmap-labels"></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Recent Alerts</h3>
+                    </div>
+                    <div class="card-body" id="alerts-container">
+                        <div class="empty-state">
+                            <p>No alerts yet. Monitoring is active.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom: Session Timeline & Sessions -->
+            <div class="bottom-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Incident Timeline</h3>
+                        <a href="/timeline" class="view-all-link">Full Timeline →</a>
+                    </div>
+                    <div class="card-body" id="mini-timeline-container" style="max-height:350px; overflow-y:auto;">
+                        <div class="empty-state">
+                            <p>No incidents recorded yet.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Session History</h3>
+                    </div>
+                    <div class="card-body" id="sessions-container">
+                        <div class="empty-state">
+                            <p>Loading sessions...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Face Registry Modal -->
+    <div class="face-modal-overlay" id="face-modal-overlay">
+        <div class="face-modal">
+            <div class="modal-header">
+                <h3>Face Registry</h3>
+                <button class="modal-close" onclick="closeFaceModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div>
+                    <h4 style="font-size:0.85rem;margin-bottom:8px;color:var(--text-primary);">Registered Faces</h4>
+                    <div class="face-list" id="face-list">
+                        <span style="color:var(--text-muted);font-size:0.78rem;">No faces registered yet.</span>
+                    </div>
+                </div>
+                <div class="face-upload-form">
+                    <h4 style="font-size:0.85rem;margin-bottom:4px;color:var(--text-primary);">Register New Face</h4>
+                    <input type="text" id="face-name-input" placeholder="Person's name">
+                    <input type="file" id="face-image-input" accept="image/*">
+                    <button onclick="registerFace()">Register Face</button>
+                    <span id="face-register-status" style="font-size:0.72rem;color:var(--text-muted);"></span>
+                </div>
+                <p class="face-privacy-note">🔒 Face data is stored locally only. No cloud upload.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evidence Viewer Modal -->
+    <div class="modal-overlay" id="evidence-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Evidence Viewer</h3>
+                <button class="modal-close" id="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div>
+                    <img src="" alt="Evidence" class="evidence-image" id="modal-evidence-img">
+                </div>
+                <div class="evidence-meta">
+                    <div class="meta-row">
+                        <span class="meta-label">Detection Type</span>
+                        <span class="meta-value" id="modal-detection-type">—</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Severity</span>
+                        <span class="meta-value" id="modal-severity">—</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Timestamp</span>
+                        <span class="meta-value" id="modal-timestamp">—</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Session ID</span>
+                        <span class="meta-value" id="modal-session-id">—</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Description</span>
+                        <span class="meta-value" id="modal-description" style="font-family:var(--font-family); font-size:0.82rem;">—</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Source</span>
+                        <span class="meta-value" id="modal-source">—</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/dashboard.js"></script>
+    <script>
+        // ─── Face Registry & Cloud Alerts ─────────────────────
+        async function loadFaceInfo() {
+            try {
+                const resp = await fetch('/api/faces');
+                const data = await resp.json();
+                document.getElementById('face-count').textContent = data.known_faces ? data.known_faces.length : 0;
+                document.getElementById('face-mode').textContent = data.recognition_available ? 'Full Recognition' : (data.detection_available ? 'Cascade Only' : 'Unavailable');
+
+                // Update modal face list
+                const faceList = document.getElementById('face-list');
+                if (data.known_faces && data.known_faces.length > 0) {
+                    faceList.innerHTML = data.known_faces.map(name => `
+                        <span class="face-badge">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            ${name}
+                        </span>
+                    `).join('');
+                } else {
+                    faceList.innerHTML = '<span style="color:var(--text-muted);font-size:0.78rem;">No faces registered yet.</span>';
+                }
+            } catch (e) { console.error('Face info error:', e); }
+        }
+
+        async function loadAlertStats() {
+            try {
+                const resp = await fetch('/api/alert-stats');
+                const data = await resp.json();
+                const statusEl = document.getElementById('webhook-status');
+                statusEl.textContent = data.enabled ? 'ENABLED' : 'DISABLED';
+                statusEl.className = data.enabled ? 'webhook-status-enabled' : 'webhook-status-disabled';
+                document.getElementById('webhook-dispatched').textContent = data.dispatched || 0;
+                document.getElementById('webhook-endpoint').textContent = data.endpoint_preview || '—';
+            } catch (e) { console.error('Alert stats error:', e); }
+        }
+
+        function openFaceModal() {
+            loadFaceInfo();
+            document.getElementById('face-modal-overlay').classList.add('active');
+        }
+
+        function closeFaceModal() {
+            document.getElementById('face-modal-overlay').classList.remove('active');
+        }
+
+        async function registerFace() {
+            const name = document.getElementById('face-name-input').value.trim();
+            const fileInput = document.getElementById('face-image-input');
+            const statusEl = document.getElementById('face-register-status');
+
+            if (!name) { statusEl.textContent = 'Please enter a name.'; return; }
+            if (!fileInput.files.length) { statusEl.textContent = 'Please select an image.'; return; }
+
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('image', fileInput.files[0]);
+
+            statusEl.textContent = 'Registering...';
+            try {
+                const resp = await fetch('/api/faces/register', { method: 'POST', body: formData });
+                const result = await resp.json();
+                if (result.success) {
+                    statusEl.textContent = `✓ ${name} registered successfully!`;
+                    statusEl.style.color = 'var(--accent-green)';
+                    document.getElementById('face-name-input').value = '';
+                    fileInput.value = '';
+                    loadFaceInfo();
+                } else {
+                    statusEl.textContent = `✕ ${result.error || 'Registration failed'}`;
+                    statusEl.style.color = 'var(--accent-red)';
+                }
+            } catch (e) {
+                statusEl.textContent = '✕ Network error';
+                statusEl.style.color = 'var(--accent-red)';
+            }
+        }
+
+        // Close face modal on overlay click or Escape
+        document.getElementById('face-modal-overlay').addEventListener('click', (e) => {
+            if (e.target.id === 'face-modal-overlay') closeFaceModal();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeFaceModal();
+        });
+
+        // Load face & alert info on page load and periodically
+        loadFaceInfo();
+        loadAlertStats();
+        setInterval(() => { loadFaceInfo(); loadAlertStats(); }, 10000);
+    </script>
+</body>
+
+</html>

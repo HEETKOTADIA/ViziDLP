@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ViziDLP — Evidence Logs</title>
+    <meta name="description" content="ViziDLP Evidence Logs — Search, filter, and view detection evidence.">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                </div>
+                <span class="logo-text">ViziDLP</span>
+            </div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/" id="nav-dashboard">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" />
+                        <rect x="14" y="3" width="7" height="7" />
+                        <rect x="14" y="14" width="7" height="7" />
+                        <rect x="3" y="14" width="7" height="7" />
+                    </svg>
+                    Dashboard
+                </a></li>
+            <li><a href="/logs" class="active" id="nav-logs">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    Evidence Logs
+                </a></li>
+            <li><a href="/timeline" id="nav-timeline">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    Timeline
+                </a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="monitoring-status active">
+                <span class="status-dot"></span>
+                <span class="status-text">Monitoring Active</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="page-title">
+                <h1>Evidence Logs</h1>
+                <p class="subtitle">Search, filter, and review detection evidence</p>
+            </div>
+            <div class="header-actions">
+                <a class="export-btn" id="export-btn" href="#" title="Export session as JSON">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Export JSON
+                </a>
+                <div class="session-selector">
+                    <label for="log-session-select" class="session-label">Session</label>
+                    <select id="log-session-select" class="filter-select">
+                        <option value="">Current Session</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <div class="logs-content">
+            <!-- Prominent Search Bar -->
+            <div class="search-bar-container">
+                <input type="text" class="search-input" id="keyword-search-input" placeholder="🔍 Search across all evidence (descriptions, categories, raw text)...">
+                <button class="search-btn" id="search-btn" onclick="executeSearch()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    Search
+                </button>
+                <button class="search-clear-btn" id="search-clear-btn" onclick="clearSearch()" style="display:none;">✕ Clear</button>
+                <span class="search-result-count" id="search-result-count" style="display:none;"></span>
+            </div>
+
+            <!-- Filters -->
+            <div class="logs-filters">
+                <input type="text" class="search-input" id="search-input" placeholder="Quick filter detections...">
+                <select class="filter-select" id="severity-filter">
+                    <option value="">All Severity</option>
+                    <option value="CRITICAL">Critical</option>
+                    <option value="HIGH">High</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="LOW">Low</option>
+                </select>
+                <select class="filter-select" id="type-filter">
+                    <option value="">All Types</option>
+                    <option value="pan_number">PAN Number</option>
+                    <option value="aadhaar_number">Aadhaar Number</option>
+                    <option value="credit_card_number">Credit Card</option>
+                    <option value="phone_number">Phone Number</option>
+                    <option value="email_address">Email Address</option>
+                    <option value="dob">Date of Birth</option>
+                    <option value="driver_licence_number">Driver Licence</option>
+                    <option value="passport_number">Passport Number</option>
+                    <option value="voter_id">Voter ID</option>
+                    <option value="bank_account">Bank Account</option>
+                    <option value="upi_id">UPI ID</option>
+                    <option value="gstin">GSTIN</option>
+                    <option value="ifsc_code">IFSC Code</option>
+                    <option value="phone_camera_exfiltration">Phone Camera</option>
+                    <option value="screenshot_taken">Screenshot</option>
+                    <option value="screen_recording_detected">Screen Recording</option>
+                </select>
+            </div>
+
+            <!-- Export Buttons (GAP 5) -->
+            <div class="logs-filters" style="gap:10px; margin-top:0; padding-top:0;">
+                <a class="export-btn" id="export-csv-btn" href="/api/export/csv" title="Export detections as CSV"
+                   style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:6px;color:var(--accent-cyan);font-size:0.82rem;font-weight:500;text-decoration:none;transition:all 250ms ease;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    Export CSV
+                </a>
+                <a class="export-btn" id="export-pdf-btn" href="/api/export/pdf-report" target="_blank"
+                   title="Generate PDF-ready incident report"
+                   style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:var(--bg-card);border:1px solid var(--border-primary);border-radius:6px;color:var(--accent-purple, #8b5cf6);font-size:0.82rem;font-weight:500;text-decoration:none;transition:all 250ms ease;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                    Incident Report
+                </a>
+            </div>
+
+            <!-- Evidence Table -->
+            <div class="card">
+                <table class="logs-table" id="logs-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Severity</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Source</th>
+                            <th>Evidence</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-tbody">
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state"><p>Loading evidence logs...</p></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Evidence Modal -->
+    <div class="modal-overlay" id="evidence-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Evidence Viewer</h3>
+                <button class="modal-close" id="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div>
+                    <img src="" alt="Evidence" class="evidence-image" id="modal-evidence-img">
+                </div>
+                <div class="evidence-meta">
+                    <div class="meta-row">
+                        <span class="meta-label">Detection Type</span>
+                        <span class="meta-value" id="modal-detection-type">—</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Severity</span>
+                        <span class="meta-value" id="modal-severity">—</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Timestamp</span>
+                        <span class="meta-value" id="modal-timestamp">—</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Session ID</span>
+                        <span class="meta-value" id="modal-session-id">—</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Description</span>
+                        <span class="meta-value" id="modal-description" style="font-family:var(--font-family); font-size:0.82rem;">—</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Source</span>
+                        <span class="meta-value" id="modal-source">—</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ─── Logs Page Logic ─────────────────────────────────
+        let logSessionId = '';
+        let currentSearchQuery = '';
+        let isSearchMode = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadLogSessions();
+            loadLogs();
+            initLogModal();
+
+            // Quick filter handlers
+            document.getElementById('search-input').addEventListener('input', debounce(loadLogs, 400));
+            document.getElementById('severity-filter').addEventListener('change', loadLogs);
+            document.getElementById('type-filter').addEventListener('change', loadLogs);
+            document.getElementById('log-session-select').addEventListener('change', (e) => {
+                logSessionId = e.target.value;
+                updateExportUrl();
+                if (isSearchMode) {
+                    executeSearch();
+                } else {
+                    loadLogs();
+                }
+            });
+
+            // Keyword search with debounce (300ms)
+            document.getElementById('keyword-search-input').addEventListener('input', debounce(() => {
+                const q = document.getElementById('keyword-search-input').value.trim();
+                if (q.length >= 2) {
+                    executeSearch();
+                } else if (q.length === 0) {
+                    clearSearch();
+                }
+            }, 300));
+
+            // Enter key triggers search
+            document.getElementById('keyword-search-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') executeSearch();
+            });
+
+            updateExportUrl();
+
+            // Auto-refresh every 5s (only when not in search mode)
+            setInterval(() => {
+                if (!isSearchMode) loadLogs();
+            }, 5000);
+        });
+
+        function updateExportUrl() {
+            const btn = document.getElementById('export-btn');
+            let url = '/api/export?format=json';
+            if (logSessionId) url += `&session_id=${logSessionId}`;
+            btn.href = url;
+        }
+
+        async function loadLogSessions() {
+            try {
+                const resp = await fetch('/api/sessions');
+                const sessions = await resp.json();
+                const select = document.getElementById('log-session-select');
+                select.innerHTML = '<option value="">Current Session</option>' +
+                    sessions.map(s => `<option value="${s.session_id}">${s.session_id}</option>`).join('');
+            } catch (e) { console.error(e); }
+        }
+
+        // ─── Keyword Search ──────────────────────────────────
+        async function executeSearch() {
+            const q = document.getElementById('keyword-search-input').value.trim();
+            if (!q) {
+                clearSearch();
+                return;
+            }
+
+            currentSearchQuery = q;
+            isSearchMode = true;
+
+            let url = `/api/search?q=${encodeURIComponent(q)}&limit=100`;
+            if (logSessionId) url += `&session_id=${logSessionId}`;
+
+            try {
+                const resp = await fetch(url);
+                const data = await resp.json();
+                renderLogs(data, q);
+
+                // Show result count & clear button
+                const countEl = document.getElementById('search-result-count');
+                countEl.textContent = `Showing ${data.length} result(s) for '${q}'`;
+                countEl.style.display = 'inline-block';
+                document.getElementById('search-clear-btn').style.display = 'inline-flex';
+            } catch (e) { console.error(e); }
+        }
+
+        function clearSearch() {
+            currentSearchQuery = '';
+            isSearchMode = false;
+            document.getElementById('keyword-search-input').value = '';
+            document.getElementById('search-result-count').style.display = 'none';
+            document.getElementById('search-clear-btn').style.display = 'none';
+            loadLogs();
+        }
+
+        // ─── Load Logs (quick filter) ────────────────────────
+        async function loadLogs() {
+            if (isSearchMode) return; // Don't override search results
+
+            const search = document.getElementById('search-input').value;
+            const severity = document.getElementById('severity-filter').value;
+            const dataType = document.getElementById('type-filter').value;
+
+            let url = '/api/detections?limit=100';
+            if (logSessionId) url += `&session_id=${logSessionId}`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            if (severity) url += `&severity=${severity}`;
+            if (dataType) url += `&data_type=${dataType}`;
+
+            try {
+                const resp = await fetch(url);
+                const data = await resp.json();
+                renderLogs(data);
+            } catch (e) { console.error(e); }
+        }
+
+        function renderLogs(detections, highlightQuery) {
+            const tbody = document.getElementById('logs-tbody');
+            if (!detections || detections.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>No detections found.</p></div></td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = detections.map(det => {
+                const sev = (det.severity || 'LOW').toLowerCase();
+                const time = formatLogTime(det.timestamp);
+                const cat = formatCat(det.data_category);
+                const desc = det.description || '—';
+                const source = det.source || '—';
+
+                // Apply search highlighting
+                const displayCat = highlightQuery ? highlightText(cat, highlightQuery) : cat;
+                const displayDesc = highlightQuery ? highlightText(desc, highlightQuery) : desc;
+
+                const evidenceThumb = det.redacted_path ?
+                    `<img class="evidence-thumb" src="${getEvidenceUrl(det.redacted_path)}" alt="Evidence" onerror="this.style.display='none'">` :
+                    '<span style="color:var(--text-muted);font-size:0.72rem;">No image</span>';
+                const detJson = JSON.stringify(det).replace(/"/g, '&quot;');
+                return `
+                    <tr onclick='openLogEvidence(${detJson})'>
+                        <td class="log-timestamp">${time}</td>
+                        <td><span class="badge badge-${sev}">${det.severity}</span></td>
+                        <td class="log-category">${displayCat}</td>
+                        <td class="log-description">${displayDesc}</td>
+                        <td style="font-size:0.75rem;color:var(--text-muted)">${source}</td>
+                        <td>${evidenceThumb}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ─── Highlight Helper ────────────────────────────────
+        function highlightText(text, query) {
+            if (!query || !text) return text;
+            const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`(${escaped})`, 'gi');
+            return text.replace(regex, '<mark>$1</mark>');
+        }
+
+        function getEvidenceUrl(path) {
+            if (!path) return '';
+            const normalized = path.replace(/\\/g, '/');
+            const idx = normalized.indexOf('evidence/');
+            return idx >= 0 ? '/api/evidence/' + normalized.substring(idx + 9) : '';
+        }
+
+        function formatLogTime(iso) {
+            if (!iso) return '—';
+            try {
+                const d = new Date(iso);
+                return d.toLocaleString([], { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
+            } catch { return iso; }
+        }
+
+        function formatCat(cat) {
+            if (!cat) return '—';
+            return cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        function debounce(fn, delay) {
+            let timer;
+            return function(...args) {
+                clearTimeout(timer);
+                timer = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
+
+        // ─── Modal ───────────────────────────────────────────
+        function initLogModal() {
+            const overlay = document.getElementById('evidence-modal');
+            document.getElementById('modal-close-btn').addEventListener('click', () => overlay.classList.remove('active'));
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('active'); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') overlay.classList.remove('active'); });
+        }
+
+        function openLogEvidence(det) {
+            const overlay = document.getElementById('evidence-modal');
+            document.getElementById('modal-evidence-img').src = getEvidenceUrl(det.redacted_path);
+            document.getElementById('modal-detection-type').textContent = formatCat(det.data_category || det.detection_type);
+            document.getElementById('modal-severity').innerHTML = `<span class="badge badge-${(det.severity||'low').toLowerCase()}">${det.severity}</span>`;
+            document.getElementById('modal-timestamp').textContent = det.timestamp || '—';
+            document.getElementById('modal-session-id').textContent = det.session_id || '—';
+            document.getElementById('modal-description').textContent = det.description || '—';
+            document.getElementById('modal-source').textContent = det.source || '—';
+            overlay.classList.add('active');
+        }
+    </script>
+</body>
+
+</html>

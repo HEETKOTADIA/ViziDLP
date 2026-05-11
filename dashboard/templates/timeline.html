@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ViziDLP — Incident Timeline</title>
+    <meta name="description" content="ViziDLP Visual Incident Timeline — chronological view of security events.">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                </div>
+                <span class="logo-text">ViziDLP</span>
+            </div>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/" id="nav-dashboard">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" />
+                        <rect x="14" y="3" width="7" height="7" />
+                        <rect x="14" y="14" width="7" height="7" />
+                        <rect x="3" y="14" width="7" height="7" />
+                    </svg>
+                    Dashboard
+                </a></li>
+            <li><a href="/logs" id="nav-logs">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    Evidence Logs
+                </a></li>
+            <li><a href="/timeline" class="active" id="nav-timeline">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    Timeline
+                </a></li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="monitoring-status active">
+                <span class="status-dot"></span>
+                <span class="status-text">Monitoring Active</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="page-title">
+                <h1>Incident Timeline</h1>
+                <p class="subtitle">Chronological view of all security events</p>
+            </div>
+            <div class="header-actions">
+                <div class="session-selector">
+                    <label for="tl-session-select" class="session-label">Session</label>
+                    <select id="tl-session-select" class="filter-select">
+                        <option value="">Current Session</option>
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <div class="timeline-container">
+            <!-- Timeline Statistics -->
+            <div class="stats-grid" style="margin-bottom:24px;">
+                <div class="stat-card stat-total">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="tl-total">0</span>
+                        <span class="stat-label">Total Events</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-high">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="tl-critical">0</span>
+                        <span class="stat-label">Critical Events</span>
+                    </div>
+                </div>
+                <div class="stat-card stat-sessions">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="tl-timespan">—</span>
+                        <span class="stat-label">Time Span</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detection Density Chart (5-minute buckets) -->
+            <div class="timeline-chart-container">
+                <div class="chart-header">
+                    <h3>Detection Density (5-min buckets)</h3>
+                    <button class="timeline-reset-btn" id="tl-reset-btn" onclick="resetBucketFilter()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
+                            <polyline points="1 4 1 10 7 10"/>
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                        </svg>
+                        Reset
+                    </button>
+                </div>
+                <div class="timeline-chart-canvas-wrap">
+                    <canvas id="density-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Severity Filter Chips -->
+            <div class="filter-chips" id="severity-chips">
+                <button class="filter-chip active" data-severity="ALL" onclick="setSeverityFilter('ALL', this)">All</button>
+                <button class="filter-chip chip-critical" data-severity="CRITICAL" onclick="setSeverityFilter('CRITICAL', this)">Critical</button>
+                <button class="filter-chip chip-high" data-severity="HIGH" onclick="setSeverityFilter('HIGH', this)">High</button>
+                <button class="filter-chip chip-medium" data-severity="MEDIUM" onclick="setSeverityFilter('MEDIUM', this)">Medium</button>
+                <button class="filter-chip chip-low" data-severity="LOW" onclick="setSeverityFilter('LOW', this)">Low</button>
+            </div>
+
+            <!-- Event Feed -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Event Feed</h3>
+                    <span id="tl-count-label" style="font-size:0.78rem;color:var(--text-muted);">Loading...</span>
+                </div>
+                <div class="card-body" id="timeline-body" style="max-height:70vh;overflow-y:auto;">
+                    <div class="empty-state">
+                        <p>Loading timeline events...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ─── State ───────────────────────────────────────────
+        let tlSessionId = '';
+        let densityChart = null;
+        let allBuckets = [];
+        let allEvents = [];
+        let activeBucket = null;   // null = show all
+        let activeSeverity = 'ALL';
+
+        const SEV_COLORS = {
+            CRITICAL: '#dc2626',
+            HIGH: '#ef4444',
+            MEDIUM: '#f59e0b',
+            LOW: '#22c55e'
+        };
+
+        const SEV_PRIORITY = { CRITICAL: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+
+        const TYPE_ICONS = {
+            ocr_pattern: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="event-type-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+            phone_camera_exfiltration: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="event-type-icon"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>',
+            screen_recording_detected: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="event-type-icon"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>',
+            screenshot_event: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="event-type-icon"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>',
+            device_detection: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="event-type-icon"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
+            object_detection: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="event-type-icon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
+        };
+
+        // ─── Init ────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            initDensityChart();
+            loadTlSessions();
+            loadGroupedTimeline();
+
+            document.getElementById('tl-session-select').addEventListener('change', (e) => {
+                tlSessionId = e.target.value;
+                loadGroupedTimeline();
+            });
+
+            // Auto-refresh every 10 seconds
+            setInterval(loadGroupedTimeline, 10000);
+        });
+
+        // ─── Load Sessions ───────────────────────────────────
+        async function loadTlSessions() {
+            try {
+                const resp = await fetch('/api/sessions');
+                const sessions = await resp.json();
+                const select = document.getElementById('tl-session-select');
+                select.innerHTML = '<option value="">Current Session</option>' +
+                    sessions.map(s => `<option value="${s.session_id}">${s.session_id}</option>`).join('');
+            } catch (e) { console.error(e); }
+        }
+
+        // ─── Load Grouped Timeline ───────────────────────────
+        async function loadGroupedTimeline() {
+            let url = '/api/timeline/grouped';
+            if (tlSessionId) url += `?session_id=${tlSessionId}`;
+
+            try {
+                const resp = await fetch(url);
+                allBuckets = await resp.json();
+
+                // Flatten all events
+                allEvents = [];
+                for (const b of allBuckets) {
+                    for (const evt of b.events) {
+                        evt._bucket = b.bucket;
+                        allEvents.push(evt);
+                    }
+                }
+
+                updateStats();
+                updateDensityChart();
+                renderFilteredEvents();
+            } catch (e) { console.error(e); }
+        }
+
+        // ─── Stats ───────────────────────────────────────────
+        function updateStats() {
+            const totalEl = document.getElementById('tl-total');
+            const criticalEl = document.getElementById('tl-critical');
+            const timespanEl = document.getElementById('tl-timespan');
+
+            totalEl.textContent = allEvents.length;
+            const critCount = allEvents.filter(e => e.severity === 'CRITICAL').length;
+            criticalEl.textContent = critCount;
+
+            if (allEvents.length >= 2) {
+                const first = new Date(allEvents[0].timestamp);
+                const last = new Date(allEvents[allEvents.length - 1].timestamp);
+                const diffMin = Math.round((last - first) / 60000);
+                timespanEl.textContent = diffMin < 60 ? `${diffMin}m` : `${Math.floor(diffMin / 60)}h ${diffMin % 60}m`;
+            } else {
+                timespanEl.textContent = '—';
+            }
+        }
+
+        // ─── Density Chart ───────────────────────────────────
+        function initDensityChart() {
+            const ctx = document.getElementById('density-chart');
+            if (!ctx) return;
+
+            densityChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Detections',
+                        data: [],
+                        backgroundColor: [],
+                        borderColor: [],
+                        borderWidth: 1,
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const idx = elements[0].index;
+                            const bucket = allBuckets[idx];
+                            if (bucket) {
+                                activeBucket = bucket.bucket;
+                                renderFilteredEvents();
+                                // Highlight the clicked bar
+                                highlightBar(idx);
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(30, 41, 59, 0.5)', drawBorder: false },
+                            ticks: { font: { size: 10 } }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(30, 41, 59, 0.3)', drawBorder: false },
+                            ticks: { font: { size: 10 }, stepSize: 1 }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `${ctx.parsed.y} detection(s)`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDensityChart() {
+            if (!densityChart) return;
+
+            const labels = allBuckets.map(b => b.bucket);
+            const data = allBuckets.map(b => b.count);
+            const colors = allBuckets.map(b => {
+                const sevs = b.severities || {};
+                const worst = getWorstSeverity(sevs);
+                return SEV_COLORS[worst] || '#64748b';
+            });
+
+            densityChart.data.labels = labels;
+            densityChart.data.datasets[0].data = data;
+            densityChart.data.datasets[0].backgroundColor = colors.map(c => c + '80');
+            densityChart.data.datasets[0].borderColor = colors;
+            densityChart.update('none');
+        }
+
+        function highlightBar(selectedIdx) {
+            if (!densityChart) return;
+            const colors = allBuckets.map((b, i) => {
+                const sevs = b.severities || {};
+                const worst = getWorstSeverity(sevs);
+                const baseColor = SEV_COLORS[worst] || '#64748b';
+                return i === selectedIdx ? baseColor : baseColor + '30';
+            });
+            densityChart.data.datasets[0].backgroundColor = colors;
+            densityChart.data.datasets[0].borderColor = allBuckets.map((b, i) => {
+                const sevs = b.severities || {};
+                const worst = getWorstSeverity(sevs);
+                const baseColor = SEV_COLORS[worst] || '#64748b';
+                return i === selectedIdx ? baseColor : baseColor + '50';
+            });
+            densityChart.update('none');
+        }
+
+        function getWorstSeverity(severities) {
+            let worst = 'LOW';
+            let worstLevel = 0;
+            for (const [sev, count] of Object.entries(severities)) {
+                if ((SEV_PRIORITY[sev] || 0) > worstLevel) {
+                    worstLevel = SEV_PRIORITY[sev];
+                    worst = sev;
+                }
+            }
+            return worst;
+        }
+
+        // ─── Severity Filter ─────────────────────────────────
+        function setSeverityFilter(severity, btn) {
+            activeSeverity = severity;
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            renderFilteredEvents();
+        }
+
+        function resetBucketFilter() {
+            activeBucket = null;
+            renderFilteredEvents();
+            if (densityChart) {
+                updateDensityChart();
+            }
+        }
+
+        // ─── Render Events ───────────────────────────────────
+        function renderFilteredEvents() {
+            let events = allEvents;
+
+            // Filter by bucket
+            if (activeBucket) {
+                events = events.filter(e => e._bucket === activeBucket);
+            }
+
+            // Filter by severity
+            if (activeSeverity !== 'ALL') {
+                events = events.filter(e => e.severity === activeSeverity);
+            }
+
+            const countLabel = document.getElementById('tl-count-label');
+            const body = document.getElementById('timeline-body');
+
+            if (!events || events.length === 0) {
+                body.innerHTML = '<div class="empty-state"><p>No events match current filters.</p></div>';
+                countLabel.textContent = activeBucket ? `0 events in ${activeBucket}` : '0 events';
+                return;
+            }
+
+            countLabel.textContent = activeBucket
+                ? `${events.length} event(s) in ${activeBucket}`
+                : `${events.length} event(s)`;
+
+            body.innerHTML = events.map(evt => {
+                const sev = (evt.severity || 'LOW').toLowerCase();
+                const time = formatTlTime(evt.timestamp);
+                const cat = formatTlCat(evt.data_category);
+                const icon = TYPE_ICONS[evt.detection_type] || TYPE_ICONS['ocr_pattern'];
+                const thumbHtml = evt.image_path
+                    ? `<img class="event-thumb" src="/api/evidence/${getRelEvidence(evt.image_path)}" alt="Evidence" onerror="this.style.display='none'">`
+                    : '';
+
+                return `
+                    <div class="timeline-event-card severity-${sev}">
+                        <div class="event-header">
+                            <span class="event-time">${time}</span>
+                            <span class="badge badge-${sev}">${evt.severity}</span>
+                        </div>
+                        <div class="event-type">${icon} ${cat}</div>
+                        <div class="event-desc">${evt.description || ''}</div>
+                        ${thumbHtml}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ─── Utilities ───────────────────────────────────────
+        function formatTlTime(iso) {
+            if (!iso) return '—';
+            try {
+                const d = new Date(iso);
+                return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            } catch { return iso; }
+        }
+
+        function formatTlCat(cat) {
+            if (!cat) return '—';
+            return cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        function getRelEvidence(path) {
+            if (!path) return '';
+            const normalized = path.replace(/\\/g, '/');
+            const idx = normalized.indexOf('evidence/');
+            return idx >= 0 ? normalized.substring(idx + 9) : '';
+        }
+    </script>
+</body>
+
+</html>
